@@ -40,6 +40,172 @@ DevOps有四个核心价值观：文化，自动化，测量和共享（可以�
 
 
 
+基础设施即代码（IAC）背后的想法是您可以通过编写和执行代码的方式， 定义、部署和更新您的基础架构。 这是一个重要的思维方式的转变，您把所有的操作都视为软件，即使是对硬件进行操作（例如设置物理服务器）。 事实上，DevOps的一个重要功能，是您可以管理代码中的几乎所有内容，包括服务器，数据库， 网络，日志文件，应用程序配置，文档，自动化测试， 部署过程等。 
+
+IAC工具有四大类： 
+
+•临时脚本 
+
+•配置管理工具 
+
+•服务器模板工具
+
+•编排工具
+
+下面我们一次来看下这几大类。
+
+## 临时脚本
+
+自动化任何工作最直接的方法是写一个临时的脚本。 您可以手动执行任务，将其分解为离散的任务步骤，通过使用您最喜欢的脚本语言（例如Bash，Ruby，Python）来定义代码中的每一个步骤，并在服务器上执行该脚本，如图1-1所示。 
+
+图1-1. 在服务器上运行临时脚本 
+
+例如，有一个名为setup-webserver.sh的Bash脚本，它依次执行安装依赖项，从Git仓库拷贝代码，启动Apache Web服务器，并完成服务器的配置。
+
+`＃更新apt-get缓存` 
+
+`sudo apt-get update`
+
+`＃安装PHP` 
+
+`sudo apt-get install -y php`
+
+`＃安装Apache`
+
+`sudo apt-get install -y apache2`
+
+`# Copy the code from repository`
+
+`sudo git clone https://github.com/brikis98/php-app.git /var/www/html/app`
+
+`# 启动Apache`
+
+`sudo service apache2 start`
+
+临时脚本的好处是你可以使用通用编程语言，您可以根据需要编写代码。但这也可能会带来很多问题。
+
+而为IAC专门构建的工具则提供了简洁的API来完成复杂的任务，如果你使用的是通用编程语言，你可以为每个任务编写完全自定义的代码。此外，为IAC设计的工具，通常可以为您的代码强制执行特定的结构，而具有通用性的编程语言，则可以使每个开发人员都使用自己的风格来做一些不同的事情。如果仅仅只是运行八行代码来安装Apache脚本来说，这些问题都不是很重要，但如果您尝试使用临时脚本来管理数百台服务器，数据库，负载均衡器，网络配置等，那就很容易出现混乱。 
+
+如果你曾经不得不维护别人的临时脚本仓库，你就会知道，维护成本有多高。临时脚本非常适合运行小规模的一次性任务，但是如果您要管理所有的基础设施即代码脚本，那么你应该使用专为此设计的IAC工具。 
+
+## 配置管理工具 
+
+Chef，Puppet，Ansible和SaltStack都是配置管理工具，它们的主要功能是安装和管理现有服务器上的软件。例如，下面是一个Ansible Role脚本，它的配置与上一节Apache Web服务器的配置相同 ：
+
+`- name: Update the apt-get cache`
+
+`apt:`
+
+`update_cache: yes`
+
+`- name: Install PHP`
+
+`apt:`
+
+`name: php`
+
+`- name: Install Apache`
+
+`apt:`
+
+`name: apache2`
+
+`- name: Copy the code from repository`
+
+`git: repo=https://github.com/brikis98/php-app.git dest=/var/www/html/app`
+
+`- name: Start Apache` 
+
+  `service: name=apache2 state=started enabled=yes`
+
+ 上面这段代码类似于bash脚本，区别仅仅是Ansible将对文档和明确的命名参数，执行一致性和结构校验。 看下Ansible如何支持内置任务，例如使用安装包，使用git apt和check out命令。 虽然这段Ansible Role代码和Bash 脚本大小差不多，但是当您开始使用Ansible执行更高级的命令时，这种差异将会变得更加明显。 
+
+而且，和临时脚本不同，后者是为在本地服务器上运行设计的，而Ansible和其他配置管理工具，则是专门设计用于管理大量远程服务器的，如图1-2所示。
+
+例如，要将上面的Web服务器角色应用于5个服务器，首先要创建一个host文件，里面包含需要管理的远程服务器IP地址：
+
+ `[Web服务器]` 
+
+`11.11.11.11` 
+
+`11.11.11.12` 
+
+`11.11.11.13` 
+
+`11.11.11.14` 
+
+`11.11.11.15` 
+
+接下来，您就可以定义Ansible Playbook：
+
+`hosts: webservers`
+
+`roles:`
+
+  `- webserver`
+
+接着，按如下方式执行playbook：
+
+`ansible-playbook playbook.yml` 
+
+## 服务器模板工具
+
+配置管理的替代方案越来越受欢迎 最近是服务器模板工具，如Docker，Packer和Vagrant。代替 启动一堆服务器并通过运行相同的代码来配置它们 每一个，服务器模板工具背后的想法是创建一个服务器的图像 捕获操作系统，软件，完全独立的“快照” 文件和所有其他相关细节。您可以为每个图像指定唯一的版本号， 将映像部署到任何环境，并回滚到以前的版本（如果有的话） 出错。当然，要在所有服务器上部署映像，您仍然需要一些 其他IAC工具。例如，您可以使用Terraform，如下一节所示， 或者您可以使用Ansible，如图1-3所示。
+
+如图1-4所示，两大类常用的处理镜像的工具： 
+
+### 虚拟机（VM） 
+
+虚拟机（VM）模拟整个计算机系统，包括硬件。 您运行虚拟机管理程序（如VMWare，VirtualBox或Parallels）来虚拟化底层CPU，内存，硬盘和网络。任何在虚拟机管理程序上运行的VM映像只能看到虚拟化硬件， 它与主机和任何其他VM映像之间是完全隔离的，并且在所有环境中都以完全相同的方式运行（例如您的计算机，QA 服务器，生产服务器等）。虚拟机的缺点是所有这些虚拟化程序，在CPU使用率，内存使用率和启动时间方面会产生大量开销。 您可以使用Packer和Vagrant等工具将VM映像定义为代码。 
+
+### 容器（Container）
+
+容器模拟操作系统的用户空间。你运行一个容器引擎，如Docker或CoreOS rkt，来创建孤立的进程、内存、挂载点和网络。您运行的任何容器（如Docker容器） 在容器引擎之上只能看到自己孤立的用户空间，所以它不能看到主机或其他容器，并且它将以完全相同的方式，在所有环境中运行（例如您的计算机，QA服务器，生产服务器等）。 由于容器直接在主机上运行，​​因此隔离不是像VM一样安全，但几乎它没有CPU或内存开销，并且容器可以在几毫秒内启动。 您可以使用Docker和CoreOs rkt等工具，将容器镜像定义为代码。
+
+1图1-4。 两种主要的镜像类型：左侧是虚拟机，右侧是容器。 虚拟机虚拟化硬件，而容器仅虚拟化用户空间。
+
+例如，这是一个创建AWS机器映像的Packer模板 （AMI），它可以在Amazon Web Services（AWS）上运行的VM映像：
+
+`{`
+
+    `"builders": [{`
+
+    `"ami_name": "packer-example",`
+
+    `"instance_type": "t2.micro",`
+
+    `"region": "us-east-1",`
+
+    `"type": "amazon-ebs",`
+
+    `"source_ami": "ami-40d28157",`
+
+    `"ssh_username": "ubuntu"`
+
+  `}],`
+
+    `"provisioners": [{`
+
+    `"type": "shell",`
+
+    `"inline": [`
+
+    `"sudo apt-get update",`
+
+    `"sudo apt-get install -y php",`
+
+    `"sudo apt-get install -y apache2",`
+
+    `"sudo git clone https://github.com/brikis98/php-app.git /var/www/html/app"`
+
+        `]`
+
+      `}]`
+
+    `}`
+
+此Packer模板配置和您在之前看到的Apache Web服务器配置相同，唯一的区别：这个Packer模板将不启动Apache Web服务器（如通过调用sudo service apache2 start）。
+
 ##  基础设施即代码
 
  
