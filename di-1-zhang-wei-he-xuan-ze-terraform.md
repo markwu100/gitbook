@@ -62,25 +62,18 @@ IAC工具有四大类：
 
 例如，有一个名为setup-webserver.sh的Bash脚本，它依次执行安装依赖项，从Git仓库拷贝代码，启动Apache Web服务器，并完成服务器的配置。
 
-`＃更新apt-get缓存` 
-
-`sudo apt-get update`
-
-`＃安装PHP` 
-
-`sudo apt-get install -y php`
-
-`＃安装Apache`
-
-`sudo apt-get install -y apache2`
-
-`# Copy the code from repository`
-
-`sudo git clone https://github.com/brikis98/php-app.git /var/www/html/app`
-
-`# 启动Apache`
-
-`sudo service apache2 start`
+```text
+＃更新apt-get缓存 
+  sudo apt-get update
+＃安装PHP 
+  sudo apt-get install -y php
+＃安装Apache
+  sudo apt-get install -y apache2
+# Copy the code from repository
+  sudo git clone https://github.com/brikis98/php-app.git /var/www/html/app
+# 启动Apache
+  sudo service apache2 start
+```
 
 临时脚本的好处是你可以使用通用编程语言，您可以根据需要编写代码。但这也可能会带来很多问题。
 
@@ -92,31 +85,21 @@ IAC工具有四大类：
 
 Chef，Puppet，Ansible和SaltStack都是配置管理工具，它们的主要功能是安装和管理现有服务器上的软件。例如，下面是一个Ansible Role脚本，它的配置与上一节Apache Web服务器的配置相同 ：
 
-`- name: Update the apt-get cache`
-
-`apt:`
-
-`update_cache: yes`
-
-`- name: Install PHP`
-
-`apt:`
-
-`name: php`
-
-`- name: Install Apache`
-
-`apt:`
-
-`name: apache2`
-
-`- name: Copy the code from repository`
-
-`git: repo=https://github.com/brikis98/php-app.git dest=/var/www/html/app`
-
-`- name: Start Apache` 
-
-  `service: name=apache2 state=started enabled=yes`
+```text
+- name: Update the apt-get cache
+ apt:
+  update_cache: yes
+- name: Install PHP
+  apt:
+  name: php
+- name: Install Apache
+  apt:
+  name: apache2
+- name: Copy the code from repository
+  git: repo=https://github.com/brikis98/php-app.git dest=/var/www/html/app
+- name: Start Apache 
+  service: name=apache2 state=started enabled=yes
+```
 
  上面这段代码类似于bash脚本，区别仅仅是Ansible将对文档和明确的命名参数，执行一致性和结构校验。 看下Ansible如何支持内置任务，例如使用安装包，使用git apt和check out命令。 虽然这段Ansible Role代码和Bash 脚本大小差不多，但是当您开始使用Ansible执行更高级的命令时，这种差异将会变得更加明显。 
 
@@ -124,25 +107,22 @@ Chef，Puppet，Ansible和SaltStack都是配置管理工具，它们的主要功
 
 例如，要将上面的Web服务器角色应用于5个服务器，首先要创建一个host文件，里面包含需要管理的远程服务器IP地址：
 
- `[Web服务器]` 
-
-`11.11.11.11` 
-
-`11.11.11.12` 
-
-`11.11.11.13` 
-
-`11.11.11.14` 
-
-`11.11.11.15` 
+```text
+[Web服务器] 
+  11.11.11.11 
+  11.11.11.12 
+  11.11.11.13 
+  11.11.11.14 
+  11.11.11.15 
+```
 
 接下来，您就可以定义Ansible Playbook：
 
-`hosts: webservers`
-
-`roles:`
-
-  `- webserver`
+```text
+hosts: webservers
+roles:
+  - webserver
+```
 
 接着，按如下方式执行playbook：
 
@@ -166,45 +146,29 @@ Chef，Puppet，Ansible和SaltStack都是配置管理工具，它们的主要功
 
 例如，这是一个创建AWS机器映像的Packer模板 （AMI），它可以在Amazon Web Services（AWS）上运行的VM映像：
 
-`{`
+```text
+{
+    "builders": [{
+    "ami_name": "packer-example",
+    "instance_type": "t2.micro",
+    "region": "us-east-1",
+    "type": "amazon-ebs",
+    "source_ami": "ami-40d28157",
+    "ssh_username": "ubuntu"
+  }],
+    "provisioners": [{
+    "type": "shell",
+    "inline": [
+    "sudo apt-get update",
+    "sudo apt-get install -y php",
+    "sudo apt-get install -y apache2",
+    "sudo git clone https://github.com/brikis98/php-app.git /var/www/html/app"
+        ]
+      }]
+    }
+```
 
-    `"builders": [{`
-
-    `"ami_name": "packer-example",`
-
-    `"instance_type": "t2.micro",`
-
-    `"region": "us-east-1",`
-
-    `"type": "amazon-ebs",`
-
-    `"source_ami": "ami-40d28157",`
-
-    `"ssh_username": "ubuntu"`
-
-  `}],`
-
-    `"provisioners": [{`
-
-    `"type": "shell",`
-
-    `"inline": [`
-
-    `"sudo apt-get update",`
-
-    `"sudo apt-get install -y php",`
-
-    `"sudo apt-get install -y apache2",`
-
-    `"sudo git clone https://github.com/brikis98/php-app.git /var/www/html/app"`
-
-        `]`
-
-      `}]`
-
-    `}`
-
-此Packer模板配置和您在之前看到的Apache Web服务器配置相同，唯一的区别：这个Packer模板将不启动Apache Web服务器（如通过调用sudo service apache2 start）。
+此Packer模板配置和您之前看到的Apache Web服务器配置相同，唯一的区别：这个Packer模板将不启动Apache Web服务器（如通过调用sudo service apache2 start）。
 
 ### 编排工具
 
@@ -293,7 +257,7 @@ resource "dnsimple_record" "example" {
 
 特别是，如果您使用服务器模板工具（如Docker或Packer），则绝大多数配置管理需求已经得到了解决。从Dockerfile或Packer模板创建映像后，剩下要做的就是为运行这些映像配置基础结构。当涉及到提供时，编排工具将是您的最佳选择。 也就是说，如果您不使用服务器模板工具，一个很好的选择是一起使用配置管理和编排工具。例如，您可以使用Terraform配置服务器并运行Chef来配置每个服务器。 可变基础设施与不可变基础设施 Chef，Puppet，Ansible和SaltStack等配置管理工具通常默认为可变的基础架构范例。例如，如果您告诉Chef安装新版本的OpenSSL，它将在现有服务器上运行软件更新，并且更改将在原地进行。随着时间的推移，当您应用越来越多的更新时，每个服务器都会建立一个独特的更改历史记录。结果，每个服务器与所有其他服务器略有不同，导致难以诊断和重现的细微配置错误（这是当您手动管理服务器时发生的相同配置漂移问题，尽管它的问题要小得多 - 使用配置管理工具时的lematic。 如果您使用Terraform等编排工具来部署由Docker或Packer创建的机器映像，那么大多数“更改”实际上是新服务器的部署。例如，要部署新版本的OpenSSL，您可以使用已安装新版本OpenSSL的Packer创建新映像，将该映像部署到一组新服务器上，然后取消部署旧服务器。这种方法降低了配置偏移错误的可能性，使您更容易确切知道每台服务器上运行的软件，并允许您随时轻松部署任何以前版本的软件（任何以前的图像）。 当然，也可以强制配置管理工具进行不可变部署，但这不是这些工具的惯用方法，而是使用编排工具的一种自然方式。值得一提的是，不可变方法本身也有缺点。例如，从服务器模板重建映像并重新部署所有服务器以进行微不足道的更改可能需要很长时间。此外，不变性只会持续到你实际运行图像为止。一旦服务器启动并运行，它将开始在硬盘驱动器上进行更改并遇到一定程度的配置偏差（尽管如果经常部署，这可以减轻）。
 
-### 程序语言与声明语言
+#### 程序语言与声明语言
 
 Chef和Ansible鼓励一种程序风格，您可以编写代码，逐步指定如何实现某些所需的最终状态。 Terraform，CloudFormation，SaltStack，Puppet和Open Stack Heat都鼓励更具说明性的风格，您可以在其中编写指定所需最终状态的代码，IAC工具本身负责确定如何实现该状态。 为了证明这种差异，我们来看一个例子。 想象一下，您希望部署10台服务器（AWS术语中的“EC2 Instances”）来运行ID为ami-40d28157（Ubuntu 16.04）的AMI。 以下是使用过程方法执行此操作的Ansible模板的简化示例：
 
