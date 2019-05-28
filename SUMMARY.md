@@ -1,6 +1,6 @@
 # Table of contents
 
-* [Initial page](README.md)
+* [译者序](README.md)
 * [序言](xu-yan.md)
 * [第1章 为何选择Terraform](di-1-zhang-wei-he-xuan-ze-terraform.md)
 * [第2章 Terraform语法简介](di-2-zhang-terraform-yu-fa-jian-jie.md)
